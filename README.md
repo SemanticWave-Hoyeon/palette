@@ -57,6 +57,8 @@ preset_colors("observable")
 - Extends user-supplied colors while preserving them.
 - Sorts newly generated colors by OKLCH hue for easier visual scanning.
 - Supports colorblind-aware generation.
+- Scores categorical colors for color-name separation, grayscale/lightness
+  separation, and white or dark background contrast.
 - Includes journal-style presets for paper figures.
 - Provides a small Tkinter desktop UI.
 - Saves palette previews as PNG files without image-library dependencies.
@@ -147,6 +149,16 @@ colors = PaperPalette(
 ).generate(n=6)
 ```
 
+Generate for a dark chart background:
+
+```python
+colors = PaperPalette(
+    mode="categorical",
+    background="dark",
+    seed=42,
+).generate(n=7)
+```
+
 Seed colors are preserved at the beginning of the returned palette:
 
 ```python
@@ -156,6 +168,28 @@ colors = PaperPalette(mode="aesthetic").generate(
 )
 print(colors)
 # ["#1E88E5", ...]
+```
+
+Extend a locked brand or manuscript color into a full chart palette:
+
+```python
+colors = PaperPalette(
+    mode="categorical",
+    colorblind="deuteranopia",
+    background="white",
+    seed=12,
+).generate(
+    n=6,
+    seed_colors=["#1E88E5", "#D81B60"],
+)
+```
+
+Use an accessible color-cycle preset:
+
+```python
+from paper_palette import preset_colors
+
+colors = preset_colors("accessible8")
 ```
 
 Supported `mode` values:
@@ -170,6 +204,13 @@ Supported `colorblind` values:
 - `"deuteranopia"`
 - `"tritanopia"`
 - `"achromatopsia"`
+
+Supported `background` values:
+
+- `"white"`
+- `"black"`
+- `"light"`
+- `"dark"`
 
 Invalid input raises `ValueError`. Accepted color inputs include `#RGB`,
 `#RRGGBB`, and `#RRGGBBAA`; output is always normalized to uppercase
@@ -210,6 +251,9 @@ Included presets:
 - `nejm`
 - `lancet`
 - `jco`
+- `petroff6`
+- `petroff8`
+- `petroff10`
 
 Preset values copied from `#RRGGBBAA` sources are normalized to `#RRGGBB`.
 If `n` is larger than a preset, Paper Palette keeps the preset colors first and
@@ -227,7 +271,7 @@ print(palette)
 
 | API | Purpose |
 | --- | --- |
-| `PaperPalette(mode="aesthetic", seed=None, colorblind=None)` | Main generator. `Palette` is kept as a shorter alias. |
+| `PaperPalette(mode="aesthetic", seed=None, colorblind=None, background="white")` | Main generator. `Palette` is kept as a shorter alias. |
 | `.generate(n, seed_colors=None)` | Return exactly `n` colors as uppercase `#RRGGBB` strings. |
 | `.preset(name, n=None, extend=True)` | Return a named preset. If `n` is larger than the preset and `extend=True`, compatible colors are generated after the preset colors. |
 | `list_presets()` | Return available preset names. |
@@ -240,7 +284,9 @@ hue. Invalid colors or invalid sizes raise `ValueError`.
 ## Comparison Example
 
 The figure below compares a common Matplotlib categorical palette with Paper
-Palette's categorical and colorblind-aware outputs.
+Palette's categorical output, a colorblind-aware output, and the Petroff
+accessible color-cycle preset. It also shows deuteranopia simulation and a
+grayscale strip so separability is easier to inspect.
 
 ![Matplotlib tab10 compared with Paper Palette categorical palettes](docs/assets/comparison_matplotlib.png)
 
@@ -269,6 +315,7 @@ The UI supports:
 - setting `n`
 - applying presets
 - rolling random palettes
+- choosing a white, light, black, or dark target background
 - clicking a swatch to lock or unlock it
 - double-clicking a swatch to enter a HEX color
 - saving the palette as a PNG in `outputs/`
@@ -301,7 +348,11 @@ by hue cohesion, lightness contrast, chroma balance, neutral/accent balance,
 duplicate avoidance, and penalties for muddy or neon-heavy colors.
 
 The `categorical` mode uses a Glasbey-style greedy farthest-point strategy in
-perceptual color space.
+perceptual color space. Its score also rewards color-name separation inspired by
+Colorgorical-style work, pairwise lightness separation for grayscale printing,
+and contrast against the selected `background`. After greedy selection, a short
+local refinement pass tries candidate swaps and keeps only improvements to the
+whole-palette score.
 
 After generation, Paper Palette sorts generated colors by OKLCH hue. This does
 not change which colors were selected; it only makes the returned list and UI

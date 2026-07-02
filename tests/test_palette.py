@@ -6,9 +6,9 @@ import pytest
 from paper_palette import Palette, PaperPalette, list_presets, preset_colors
 from paper_palette._color import circular_mean_degrees, hex_to_rgb01, hue_distance, normalize_hex, oklab_to_oklch, rgb01_to_oklab
 from paper_palette._colorblind import simulated_oklab
-from paper_palette._palette import HUE_SORT_START_DEGREES, _sort_generated_colors
+from paper_palette._palette import HUE_SORT_START_DEGREES, Palette as InternalPalette, _sort_generated_colors
 from paper_palette._png import save_palette_png
-from paper_palette._ui import COLORBLIND_OPTIONS, PRESET_OPTIONS, PaletteApp, preset_palette_state
+from paper_palette._ui import BACKGROUND_OPTIONS, COLORBLIND_OPTIONS, PRESET_OPTIONS, PaletteApp, preset_palette_state
 
 
 HEX_RE = re.compile(r"^#[0-9A-F]{6}$")
@@ -75,7 +75,9 @@ def test_generated_color_sort_uses_rainbow_like_order():
 
 def test_preset_colors_are_public_and_normalized():
     assert "npg" in list_presets()
+    assert "petroff10" in list_presets()
     assert preset_colors("obs", n=3) == ["#4269D0", "#EFB118", "#FF725C"]
+    assert preset_colors("accessible8", n=2) == ["#1845FB", "#FF5E02"]
     assert Palette(mode="categorical", seed=5).preset("nejm", n=3) == [
         "#BC3C29",
         "#0072B5",
@@ -95,6 +97,28 @@ def test_invalid_constructor_values_raise():
         Palette(mode="random")
     with pytest.raises(ValueError):
         Palette(colorblind="unknown")
+    with pytest.raises(ValueError):
+        Palette(background="transparent")
+
+
+def test_background_option_changes_categorical_palette():
+    white = Palette(mode="categorical", background="white", seed=42).generate(n=7)
+    dark = Palette(mode="categorical", background="dark", seed=42).generate(n=7)
+    assert white != dark
+    assert all(HEX_RE.match(color) for color in dark)
+
+
+def test_categorical_uses_distinct_color_name_bins():
+    colors = Palette(mode="categorical", seed=42).generate(n=6)
+    lch = _colors_to_lch(colors)
+    bins = InternalPalette._color_name_bins(lch)
+    assert len(set(bins)) >= 5
+
+
+def test_color_name_distance_handles_neutral_bins():
+    lch = _colors_to_lch(["#111111", "#777777", "#FFFFFF", "#FF0000"])
+    distances = InternalPalette._color_name_distance(lch[:1], lch[1:])
+    assert distances[0] >= 0
 
 
 def test_invalid_generate_values_raise():
@@ -129,6 +153,12 @@ def test_categorical_palette_has_perceptual_separation():
     assert distances.min() > 0.065
 
 
+def test_categorical_can_generate_larger_palette():
+    colors = Palette(mode="categorical", seed=55).generate(n=12)
+    assert len(colors) == 12
+    assert all(HEX_RE.match(color) for color in colors)
+
+
 @pytest.mark.parametrize("mode", ["protanopia", "deuteranopia", "tritanopia", "achromatopsia"])
 def test_colorblind_modes_keep_simulated_colors_apart(mode):
     colors = Palette(mode="categorical", colorblind=mode, seed=31).generate(n=5)
@@ -147,6 +177,11 @@ def test_ui_colorblind_options_match_palette_modes():
         Palette(colorblind=mode)
 
 
+def test_ui_background_options_match_palette_modes():
+    for background in BACKGROUND_OPTIONS.values():
+        Palette(background=background)
+
+
 def test_ui_preset_options_match_public_presets():
     assert PRESET_OPTIONS["None"] is None
     assert set(PRESET_OPTIONS.values()) == {None, *list_presets()}
@@ -158,6 +193,7 @@ def test_ui_preset_state_locks_only_preset_colors_when_n_is_larger():
         n=10,
         mode="categorical",
         colorblind=None,
+        background="dark",
     )
     assert colors[:8] == preset_colors("nejm")
     assert len(colors) == 10
@@ -190,7 +226,11 @@ def test_save_palette_png_writes_valid_png(tmp_path):
 
 
 def _is_hue_sorted(colors):
-    rgb = np.array([hex_to_rgb01(color) for color in colors])
-    lch = oklab_to_oklch(rgb01_to_oklab(rgb))
+    lch = _colors_to_lch(colors)
     hue_positions = [float((item[2] - HUE_SORT_START_DEGREES) % 360.0) for item in lch]
     return hue_positions == sorted(hue_positions)
+
+
+def _colors_to_lch(colors):
+    rgb = np.array([hex_to_rgb01(color) for color in colors])
+    return oklab_to_oklch(rgb01_to_oklab(rgb))

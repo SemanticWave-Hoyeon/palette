@@ -128,6 +128,51 @@ _PRESET_DATA = {
         ),
         aliases=("clinical oncology", "oncology", "jco10"),
     ),
+    "petroff6": Preset(
+        name="petroff6",
+        label="Petroff Accessible 6",
+        colors=(
+            "#5790FC",
+            "#F89C20",
+            "#E42536",
+            "#964A8B",
+            "#9C9CA1",
+            "#7A21DD",
+        ),
+        aliases=("accessible6", "accessible color cycle 6"),
+    ),
+    "petroff8": Preset(
+        name="petroff8",
+        label="Petroff Accessible 8",
+        colors=(
+            "#1845FB",
+            "#FF5E02",
+            "#C91F16",
+            "#C849A9",
+            "#ADAD7D",
+            "#86C8DD",
+            "#578DFF",
+            "#656364",
+        ),
+        aliases=("accessible8", "accessible color cycle 8"),
+    ),
+    "petroff10": Preset(
+        name="petroff10",
+        label="Petroff Accessible 10",
+        colors=(
+            "#3F90DA",
+            "#FFA90E",
+            "#BD1F01",
+            "#94A4A2",
+            "#832DB6",
+            "#A96B59",
+            "#E76300",
+            "#B9AC70",
+            "#717581",
+            "#92DADD",
+        ),
+        aliases=("accessible", "accessible10", "accessible color cycle 10", "petroff"),
+    ),
 }
 
 _ALIASES = {

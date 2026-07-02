@@ -36,9 +36,23 @@ neutral/accent balance, duplicate avoidance, and muddy/neon penalties.
   Application, 2007  
   https://pureportal.strath.ac.uk/en/publications/colour-displays-for-categorical-images
 
+- Connor C. Gramazio, David H. Laidlaw, and Karen B. Schloss, "Colorgorical:
+  Creating discriminable and preferable color palettes for information
+  visualization," IEEE Transactions on Visualization and Computer Graphics,
+  2017  
+  https://doi.org/10.1109/TVCG.2016.2598918
+
+- Matthew A. Petroff, "Accessible Color Sequences for Data Visualization,"
+  2021  
+  https://arxiv.org/abs/2107.02270
+
 Paper Palette's `categorical` mode uses a Glasbey-style greedy farthest-point
 selection strategy in perceptual color space: each added color is selected to
-remain visually distinct from the colors already chosen.
+remain visually distinct from the colors already chosen. Version 0.2 adds
+Colorgorical-inspired color-name separation, grayscale/lightness separation,
+background contrast scoring, and a small local refinement pass over the greedy
+result. Petroff's work informs the accessibility-oriented constraints and the
+included accessible color-cycle presets.
 
 ## Colorblind-Aware Generation
 
@@ -64,9 +78,14 @@ for charts should offer colorblind-aware options.
 - ggsci documentation  
   https://nanx.me/ggsci/
 
+- Matthew A. Petroff, "accessible-color-cycles"  
+  https://github.com/mpetroff/accessible-color-cycles
+
 The bundled journal-style presets follow the same broad family of scientific
 figure palettes popularized by packages such as `ggsci`: NPG, AAAS/Science,
-NEJM, Lancet, JCO, BMJ, and Observable-style categorical colors.
+NEJM, Lancet, JCO, BMJ, and Observable-style categorical colors. The bundled
+`petroff6`, `petroff8`, and `petroff10` presets follow the final accessible
+color-cycle results published with Petroff's repository.
 
 The preset names are descriptive labels for familiar palette styles. They do
 not imply endorsement by, affiliation with, or trademark permission from the

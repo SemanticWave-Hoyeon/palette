@@ -18,6 +18,13 @@ COLORBLIND_OPTIONS = {
     "Achromatopsia": "achromatopsia",
 }
 
+BACKGROUND_OPTIONS = {
+    "White": "white",
+    "Black": "black",
+    "Light": "light",
+    "Dark": "dark",
+}
+
 PRESET_OPTIONS = {"None": None}
 PRESET_OPTIONS.update({preset_label(name): name for name in list_presets()})
 
@@ -27,8 +34,9 @@ def preset_palette_state(
     n: int,
     mode: str,
     colorblind: str | None,
+    background: str = "white",
 ) -> tuple[list[str], list[bool]]:
-    colors = Palette(mode=mode, colorblind=colorblind).preset(preset_name, n=n)
+    colors = Palette(mode=mode, colorblind=colorblind, background=background).preset(preset_name, n=n)
     locked_count = min(preset_size(preset_name), len(colors))
     locked = [index < locked_count for index in range(len(colors))]
     return colors, locked
@@ -51,6 +59,7 @@ class PaletteApp(tk.Tk):
         self.n_var = tk.IntVar(value=6)
         self.mode_var = tk.StringVar(value="aesthetic")
         self.colorblind_var = tk.StringVar(value="None")
+        self.background_var = tk.StringVar(value="White")
         self.preset_var = tk.StringVar(value="None")
         self.status_var = tk.StringVar(value="Set n, roll the dice, click to lock, double-click to edit HEX.")
 
@@ -92,6 +101,14 @@ class PaletteApp(tk.Tk):
         )
 
         tk.Button(controls, text="🎲", width=4, command=self.roll).grid(row=0, column=6, padx=(0, 8))
+
+        tk.Label(controls, text="background").grid(row=0, column=7, sticky="w")
+        tk.OptionMenu(controls, self.background_var, *BACKGROUND_OPTIONS).grid(
+            row=0,
+            column=8,
+            padx=(6, 0),
+            sticky="w",
+        )
 
         tk.Label(controls, text="preset").grid(row=1, column=0, pady=(10, 0), sticky="w")
         tk.OptionMenu(controls, self.preset_var, *PRESET_OPTIONS).grid(
@@ -214,6 +231,7 @@ class PaletteApp(tk.Tk):
             generated = Palette(
                 mode=self.mode_var.get(),
                 colorblind=COLORBLIND_OPTIONS[self.colorblind_var.get()],
+                background=BACKGROUND_OPTIONS[self.background_var.get()],
             ).generate(len(self.colors), seed_colors=locked_colors)
         except ValueError as exc:
             messagebox.showerror("Palette error", str(exc), parent=self)
@@ -243,6 +261,7 @@ class PaletteApp(tk.Tk):
                 n=len(self.colors),
                 mode=self.mode_var.get(),
                 colorblind=COLORBLIND_OPTIONS[self.colorblind_var.get()],
+                background=BACKGROUND_OPTIONS[self.background_var.get()],
             )
         except ValueError as exc:
             messagebox.showerror("Preset", str(exc), parent=self)
