@@ -33,6 +33,20 @@ PaperPalette(mode="aesthetic", seed=42).generate(n=6)
 PaperPalette(mode="categorical", seed=42).generate(n=8)
 ```
 
+**Matplotlib categorical 차트 예시**
+
+![Matplotlib pie, line, bar, and box plot examples using Paper Palette categorical colors](docs/assets/matplotlib_chart_examples.png)
+
+```python
+import matplotlib.pyplot as plt
+from paper_palette import PaperPalette
+
+colors = PaperPalette(mode="categorical", seed=42).generate(n=8)
+
+plt.pie([24, 18, 21, 14, 23], colors=colors[:5])
+plt.show()
+```
+
 **색각 이상 조건을 고려한 categorical 팔레트**
 
 ![Deuteranopia-aware categorical palette generated with seed 42](docs/assets/deuteranopia_seed42.png)
