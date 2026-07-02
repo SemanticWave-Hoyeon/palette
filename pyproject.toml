@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/hoyeoncho/palette"
-Issues = "https://github.com/hoyeoncho/palette/issues"
+Repository = "https://github.com/SemanticWave-Hoyeon/palette"
+Issues = "https://github.com/SemanticWave-Hoyeon/palette/issues"
 
 [project.scripts]
 palette-ui = "palette._ui:main"
