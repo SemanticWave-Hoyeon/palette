@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "palette"
+version = "0.1.0"
+description = "Research-informed color palette generation for design and categorical charts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+  { name = "Hoyeon Cho" }
+]
+keywords = ["color", "palette", "oklab", "visualization", "tkinter"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+  "numpy>=1.24"
+]
+
+[project.urls]
+Repository = "https://github.com/hoyeoncho/palette"
+Issues = "https://github.com/hoyeoncho/palette/issues"
+
+[project.scripts]
+palette-ui = "palette._ui:main"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
