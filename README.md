@@ -260,6 +260,15 @@ Use `aesthetic` when the palette should feel like one visual theme:
 PaperPalette(mode="aesthetic").generate(n=6)
 ```
 
+Aesthetic generation defaults to `harmony="stable"`, which intentionally favors
+analogous and tonal templates. Wider templates are available when you want more
+contrast inside a still-harmonized design palette:
+
+```python
+PaperPalette(mode="aesthetic", harmony="expressive").generate(n=6)
+PaperPalette(mode="aesthetic", harmony="triadic").generate(n=6)
+```
+
 Use `categorical` when each color represents a different group in a figure:
 
 ```python
@@ -307,7 +316,7 @@ print(palette)
 
 | API | Purpose |
 | --- | --- |
-| `PaperPalette(mode="aesthetic", seed=None, colorblind=None, background="white")` | Main generator. `Palette` is kept as a shorter alias. |
+| `PaperPalette(mode="aesthetic", seed=None, colorblind=None, background="white", harmony="stable")` | Main generator. `Palette` is kept as a shorter alias. |
 | `.generate(n, seed_colors=None)` | Return exactly `n` colors as uppercase `#RRGGBB` strings. |
 | `.preset(name, n=None, extend=True)` | Return a named preset. If `n` is larger than the preset and `extend=True`, compatible colors are generated after the preset colors. |
 | `list_presets()` | Return available preset names. |
@@ -316,6 +325,13 @@ print(palette)
 `seed` makes generation reproducible. `seed_colors` are preserved at the front
 of the result, while newly generated colors after them are sorted by perceptual
 hue. Invalid colors or invalid sizes raise `ValueError`.
+
+`harmony` affects `mode="aesthetic"` only. Supported values are `stable`,
+`expressive`, `analogous`, `monochrome_accent`, `split_complementary`, and
+`triadic`. The default `stable` setting keeps split-complementary and triadic
+templates disabled because they often feel less cohesive in small UI or
+presentation palettes. Use `expressive` or an exact template name when that
+wider color relationship is desired.
 
 ## Comparison Example
 
@@ -329,6 +345,9 @@ grayscale strip so separability is easier to inspect.
 Paper Palette is not intended to replace full color science packages such as
 `colorspace`. It aims to make publication-ready categorical palettes, preset
 extension, and a lightweight locking UI easy to use from a small Python package.
+
+See [docs/QUALITY.md](docs/QUALITY.md) for measured OKLab separation,
+colorblind-simulation separation, background contrast, and runtime checks.
 
 ## Desktop UI
 
@@ -381,9 +400,12 @@ Paper Palette uses OKLab/OKLCH internally so distances and harmony scores are cl
 to visual perception than raw RGB or HSV.
 
 The `aesthetic` mode is score-and-rerank based. It samples many candidate
-palettes from analogous and tonal harmony families, then ranks whole palettes
-by hue cohesion, lightness contrast, chroma balance, neutral/accent balance,
-duplicate avoidance, and penalties for muddy or neon-heavy colors.
+palettes from analogous and tonal harmony families by default, then ranks whole
+palettes by hue cohesion, lightness contrast, chroma balance, neutral/accent
+balance, duplicate avoidance, and penalties for muddy or neon-heavy colors.
+Split-complementary and triadic templates are implemented but kept out of the
+default `stable` template mix; they can be enabled with `harmony="expressive"`
+or selected directly with `harmony="split_complementary"` or `harmony="triadic"`.
 
 The `categorical` mode uses a Glasbey-style greedy farthest-point strategy in
 perceptual color space. Its score also rewards color-name separation inspired by

@@ -120,6 +120,27 @@ def test_invalid_constructor_values_raise():
         Palette(colorblind="unknown")
     with pytest.raises(ValueError):
         Palette(background="transparent")
+    with pytest.raises(ValueError):
+        Palette(harmony="chaotic")
+
+
+def test_aesthetic_harmony_template_can_be_selected_explicitly():
+    palette = InternalPalette(mode="aesthetic", seed=1, harmony="triadic")
+    assert palette._choose_harmony_template(count=6, has_seed=False) == "triadic"
+    colors = palette.generate(n=6)
+    assert len(colors) == 6
+    assert all(HEX_RE.match(color) for color in colors)
+
+
+def test_expressive_harmony_can_use_wider_templates():
+    templates = {
+        InternalPalette(mode="aesthetic", seed=seed, harmony="expressive")._choose_harmony_template(
+            count=6,
+            has_seed=False,
+        )
+        for seed in range(30)
+    }
+    assert {"split_complementary", "triadic"} & templates
 
 
 def test_background_option_changes_categorical_palette():

@@ -21,6 +21,14 @@ from ._presets import preset_colors
 
 MODES = {"aesthetic", "categorical"}
 BACKGROUNDS = {"white", "black", "light", "dark"}
+HARMONY_MODES = {
+    "stable",
+    "expressive",
+    "analogous",
+    "monochrome_accent",
+    "split_complementary",
+    "triadic",
+}
 HUE_SORT_START_DEGREES = 350.0
 NEUTRAL_CHROMA_THRESHOLD = 0.035
 
@@ -44,6 +52,7 @@ class Palette:
         seed: int | None = None,
         colorblind: str | None = None,
         background: str = "white",
+        harmony: str = "stable",
     ) -> None:
         if mode not in MODES:
             raise ValueError("mode must be 'aesthetic' or 'categorical'.")
@@ -53,11 +62,15 @@ class Palette:
         if background not in BACKGROUNDS:
             supported = ", ".join(repr(item) for item in sorted(BACKGROUNDS))
             raise ValueError(f"background must be one of: {supported}.")
+        if harmony not in HARMONY_MODES:
+            supported = ", ".join(repr(item) for item in sorted(HARMONY_MODES))
+            raise ValueError(f"harmony must be one of: {supported}.")
 
         self.mode = mode
         self.seed = seed
         self.colorblind = colorblind
         self.background = background
+        self.harmony = harmony
         self._rng = np.random.default_rng(seed)
 
     def generate(self, n: int, seed_colors: list[str] | tuple[str, ...] | None = None) -> list[str]:
@@ -543,6 +556,20 @@ class Palette:
 
     def _choose_harmony_template(self, count: int, has_seed: bool) -> str:
         templates = np.array(["analogous", "monochrome_accent", "split_complementary", "triadic"])
+        if self.harmony in {"analogous", "monochrome_accent", "split_complementary", "triadic"}:
+            return self.harmony
+        if self.harmony == "expressive":
+            if has_seed:
+                weights = np.array([0.62, 0.18, 0.12, 0.08])
+            elif count <= 4:
+                weights = np.array([0.56, 0.22, 0.14, 0.08])
+            else:
+                weights = np.array([0.58, 0.18, 0.14, 0.10])
+            return str(self._rng.choice(templates, p=weights))
+
+        # The default deliberately favors stable, cohesive design palettes.
+        # Wider split-complementary and triadic templates are available through
+        # harmony="expressive" or by selecting the exact template by name.
         if has_seed:
             weights = np.array([0.85, 0.15, 0.00, 0.00])
         elif count <= 4:

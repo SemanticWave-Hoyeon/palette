@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.0 - 2026-07-02
+
+- Add `harmony` control for aesthetic palettes.
+- Keep `harmony="stable"` as the default, while allowing `expressive`,
+  `analogous`, `monochrome_accent`, `split_complementary`, and `triadic`.
+- Document why split-complementary and triadic templates are disabled in the
+  default stable mix.
+- Add a quality and performance report with OKLab separation, colorblind
+  simulation separation, background contrast, and runtime measurements.
+- Add a reproducible benchmark script for future comparisons.
+
 ## v1.0.0 - 2026-07-02
 
 First stable release.
