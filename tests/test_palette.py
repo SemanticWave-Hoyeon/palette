@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from paper_palette import Palette, PaperPalette, list_presets, preset_colors
-from paper_palette._color import circular_mean_degrees, hex_to_rgb01, hue_distance, normalize_hex, oklab_to_oklch, pairwise_min_distance, rgb01_to_oklab
+from paper_palette._color import circular_mean_degrees, hex_to_rgb01, hue_distance, normalize_hex, oklab_to_oklch, oklch_to_rgb01_and_lch_if_in_gamut, oklch_to_rgb01_if_in_gamut, pairwise_min_distance, rgb01_to_oklab
 from paper_palette._colorblind import simulated_oklab
 from paper_palette._palette import HUE_SORT_START_DEGREES, Palette as InternalPalette, _sort_generated_colors
 from paper_palette._png import save_palette_png
@@ -31,6 +31,20 @@ def test_pairwise_min_distance_matches_naive_norm():
     selected = np.array([[0.2, 0.2, 0.2], [0.8, 0.3, 0.1]])
     expected = np.linalg.norm(values[:, None, :] - selected[None, :, :], axis=-1).min(axis=1)
     assert np.allclose(pairwise_min_distance(values, selected), expected)
+
+
+def test_oklch_gamut_helper_preserves_rgb_result():
+    lch = np.array(
+        [
+            [0.64, 0.12, 20.0],
+            [0.70, 0.10, 150.0],
+            [0.82, 0.08, 250.0],
+        ]
+    )
+    rgb_only = oklch_to_rgb01_if_in_gamut(lch)
+    rgb, kept_lch = oklch_to_rgb01_and_lch_if_in_gamut(lch)
+    assert np.allclose(rgb, rgb_only)
+    assert len(kept_lch) == len(rgb)
 
 
 def test_import_smoke():
@@ -126,6 +140,21 @@ def test_color_name_distance_handles_neutral_bins():
     lch = _colors_to_lch(["#111111", "#777777", "#FFFFFF", "#FF0000"])
     distances = InternalPalette._color_name_distance(lch[:1], lch[1:])
     assert distances[0] >= 0
+
+
+def test_incremental_color_name_distance_matches_full_distance():
+    lch = _colors_to_lch(["#FF0000", "#FF7F00", "#00FF00", "#0000FF"])
+    names = InternalPalette._color_name_bins(lch)
+    full = InternalPalette._color_name_distance(lch[:3], lch[3:])
+    incremental = InternalPalette._color_name_distance_to_bin(names[:3], int(names[3]))
+    assert np.allclose(incremental, full)
+
+
+def test_distance_to_point_matches_naive_norm():
+    values = np.array([[0.1, 0.2, 0.3], [0.4, 0.2, 0.8], [0.7, 0.4, 0.1]])
+    point = np.array([0.2, 0.3, 0.5])
+    expected = np.linalg.norm(values - point, axis=1)
+    assert np.allclose(InternalPalette._distance_to_point(values, point, np.sum(values * values, axis=1)), expected)
 
 
 def test_invalid_generate_values_raise():

@@ -10,7 +10,8 @@ from ._color import (
     hue_distance,
     normalize_hex,
     oklab_to_oklch,
-    oklch_to_rgb01_if_in_gamut,
+    oklch_to_oklab,
+    oklch_to_rgb01_and_lch_if_in_gamut,
     pairwise_min_distance,
     rgb01_to_hex,
     rgb01_to_oklab,
@@ -30,6 +31,8 @@ class _CandidatePool:
     lab: np.ndarray
     lch: np.ndarray
     simulated_lab: np.ndarray
+    lab_norm_sq: np.ndarray
+    simulated_lab_norm_sq: np.ndarray
 
 
 class Palette:
@@ -178,20 +181,21 @@ class Palette:
         )
 
         selected_rgb: list[np.ndarray] = []
-        selected_lab = seed_lab.copy()
-        selected_sim_lab = seed_sim_lab.copy()
 
         hue_fit = self._template_distance(pool.lch[:, 2], hue_centers)
         lightness_fit = np.abs(pool.lch[:, 0] - target_l)
         chroma_fit = np.abs(pool.lch[:, 1] - target_c)
+        normal_min = pairwise_min_distance(pool.lab, seed_lab)
+        sim_min = (
+            pairwise_min_distance(pool.simulated_lab, seed_sim_lab)
+            if self.colorblind is not None
+            else np.empty((0,), dtype=float)
+        )
 
         for step in range(count):
-            normal_min = pairwise_min_distance(pool.lab, selected_lab)
-
             threshold = self._distance_threshold("aesthetic", len(seed_lab) + step + 1)
             valid = normal_min > 0.030
             if self.colorblind is not None:
-                sim_min = pairwise_min_distance(pool.simulated_lab, selected_sim_lab)
                 valid &= sim_min > threshold
 
             too_close_penalty = np.clip(0.055 - normal_min, 0.0, None) * 6.0
@@ -212,9 +216,19 @@ class Palette:
 
             rgb = pool.rgb[choice]
             selected_rgb.append(rgb)
-            selected_lab = np.vstack([selected_lab, pool.lab[choice]])
+            normal_min = np.minimum(
+                normal_min,
+                self._distance_to_point(pool.lab, pool.lab[choice], pool.lab_norm_sq),
+            )
             if self.colorblind is not None:
-                selected_sim_lab = np.vstack([selected_sim_lab, pool.simulated_lab[choice]])
+                sim_min = np.minimum(
+                    sim_min,
+                    self._distance_to_point(
+                        pool.simulated_lab,
+                        pool.simulated_lab[choice],
+                        pool.simulated_lab_norm_sq,
+                    ),
+                )
 
         return np.array(selected_rgb, dtype=float), template, hue_centers
 
@@ -357,9 +371,11 @@ class Palette:
 
     @staticmethod
     def _pairwise_distances(values: np.ndarray) -> np.ndarray:
-        distances = np.linalg.norm(values[:, None, :] - values[None, :, :], axis=-1)
-        mask = ~np.eye(len(values), dtype=bool)
-        return distances[mask]
+        if len(values) <= 1:
+            return np.empty((0,), dtype=float)
+        row, col = np.triu_indices(len(values), k=1)
+        diff = values[row] - values[col]
+        return np.sqrt(np.sum(diff * diff, axis=1))
 
     def _generate_categorical(
         self,
@@ -382,40 +398,44 @@ class Palette:
         )
 
         selected_rgb: list[np.ndarray] = []
-        selected_lab = seed_lab.copy()
-        selected_lch = seed_lch.copy()
-        selected_sim_lab = seed_sim_lab.copy()
 
         pool_name_bins = self._color_name_bins(pool.lch)
         lightness_fit = 1.0 - np.abs(pool.lch[:, 0] - 0.65) / 0.25
         chroma_fit = 1.0 - np.abs(pool.lch[:, 1] - 0.15) / 0.12
         tone_fit = 1.0 - np.minimum(hue_distance(pool.lch[:, 2], tone_hue), 90.0) / 90.0
         background_fit = self._background_contrast_score(pool.lch)
+        normal_min = pairwise_min_distance(pool.lab, seed_lab)
+        lightness_min = self._min_lightness_distance(pool.lch, seed_lch)
+        name_distance = self._color_name_distance_from_bins(pool_name_bins, seed_lch)
+        sim_min = (
+            pairwise_min_distance(pool.simulated_lab, seed_sim_lab)
+            if self.colorblind is not None
+            else np.empty((0,), dtype=float)
+        )
 
         for step in range(count):
-            normal_min = pairwise_min_distance(pool.lab, selected_lab)
-            lightness_min = self._min_lightness_distance(pool.lch, selected_lch)
-            name_distance = self._color_name_distance_from_bins(pool_name_bins, selected_lch)
-
             threshold = self._distance_threshold("categorical", len(seed_lab) + step + 1)
             valid = normal_min > threshold
             valid &= lightness_min > self._lightness_threshold(len(seed_lab) + step + 1)
             if self.colorblind is not None:
-                sim_min = pairwise_min_distance(pool.simulated_lab, selected_sim_lab)
                 valid &= sim_min > threshold
             else:
-                sim_min = normal_min
+                sim_min_for_scores = normal_min
 
             name_fit = np.minimum(name_distance, 2.0) / 2.0
             lightness_fit_pairwise = np.minimum(lightness_min, 0.12) / 0.12
-            if selected_lab.size:
+            if len(seed_lab) + step:
                 distance_score = normal_min
             else:
                 distance_score = 0.18 + self._rng.uniform(0.0, 0.02, size=len(pool.rgb))
 
             scores = (
                 distance_score * 1.55
-                + np.minimum(sim_min, 0.22) * (0.65 if self.colorblind is not None else 0.15)
+                + np.minimum(
+                    sim_min if self.colorblind is not None else sim_min_for_scores,
+                    0.22,
+                )
+                * (0.65 if self.colorblind is not None else 0.15)
                 + lightness_fit * 0.08
                 + chroma_fit * 0.07
                 + tone_fit * 0.035
@@ -429,10 +449,27 @@ class Palette:
 
             rgb = pool.rgb[choice]
             selected_rgb.append(rgb)
-            selected_lab = np.vstack([selected_lab, pool.lab[choice]])
-            selected_lch = np.vstack([selected_lch, pool.lch[choice]])
+            normal_min = np.minimum(
+                normal_min,
+                self._distance_to_point(pool.lab, pool.lab[choice], pool.lab_norm_sq),
+            )
+            lightness_min = np.minimum(
+                lightness_min,
+                np.abs(pool.lch[:, 0] - pool.lch[choice, 0]),
+            )
+            name_distance = np.minimum(
+                name_distance,
+                self._color_name_distance_to_bin(pool_name_bins, int(pool_name_bins[choice])),
+            )
             if self.colorblind is not None:
-                selected_sim_lab = np.vstack([selected_sim_lab, pool.simulated_lab[choice]])
+                sim_min = np.minimum(
+                    sim_min,
+                    self._distance_to_point(
+                        pool.simulated_lab,
+                        pool.simulated_lab[choice],
+                        pool.simulated_lab_norm_sq,
+                    ),
+                )
 
         generated_rgb = np.array(selected_rgb, dtype=float)
         return self._refine_categorical(
@@ -454,6 +491,7 @@ class Palette:
         chroma: tuple[float, float],
     ) -> _CandidatePool:
         rgb_chunks: list[np.ndarray] = []
+        lch_chunks: list[np.ndarray] = []
         rgb_count = 0
         attempts = 0
         while rgb_count < size and attempts < 30:
@@ -468,25 +506,40 @@ class Palette:
                 h = (centers + self._rng.normal(0.0, hue_sigma or 1.0, size=batch_size)) % 360.0
 
             lch = np.stack([L, C, h], axis=-1)
-            rgb_chunk = oklch_to_rgb01_if_in_gamut(lch)
+            rgb_chunk, lch_chunk = oklch_to_rgb01_and_lch_if_in_gamut(lch)
             rgb_chunks.append(rgb_chunk)
+            lch_chunks.append(lch_chunk)
             rgb_count += len(rgb_chunk)
 
         if not rgb_chunks:
             raise RuntimeError("Could not generate any in-gamut color candidates.")
 
         rgb = np.vstack(rgb_chunks)
+        lch = np.vstack(lch_chunks)
         if len(rgb) < size:
             raise RuntimeError("Could not generate enough in-gamut color candidates.")
         rgb = rgb[:size]
-        lab = rgb01_to_oklab(rgb)
-        lch = oklab_to_oklch(lab)
+        lch = lch[:size]
+        lab = oklch_to_oklab(lch)
+        lab_norm_sq = np.sum(lab * lab, axis=1)
         sim_lab = (
             simulated_oklab(rgb, self.colorblind)
             if self.colorblind is not None
             else np.empty((0, 3), dtype=float)
         )
-        return _CandidatePool(rgb=rgb, lab=lab, lch=lch, simulated_lab=sim_lab)
+        sim_lab_norm_sq = (
+            np.sum(sim_lab * sim_lab, axis=1)
+            if self.colorblind is not None
+            else np.empty((0,), dtype=float)
+        )
+        return _CandidatePool(
+            rgb=rgb,
+            lab=lab,
+            lch=lch,
+            simulated_lab=sim_lab,
+            lab_norm_sq=lab_norm_sq,
+            simulated_lab_norm_sq=sim_lab_norm_sq,
+        )
 
     def _choose_harmony_template(self, count: int, has_seed: bool) -> str:
         templates = np.array(["analogous", "monochrome_accent", "split_complementary", "triadic"])
@@ -569,6 +622,14 @@ class Palette:
         distances = np.where(chromatic, np.minimum(distances, 8 - distances), distances)
         distances = np.where(names[:, None] == selected_names[None, :], 0, distances)
         return distances.min(axis=1).astype(float)
+
+    @staticmethod
+    def _color_name_distance_to_bin(names: np.ndarray, selected_name: int) -> np.ndarray:
+        distances = np.abs(names - selected_name)
+        chromatic = (names < 8) & (selected_name < 8)
+        distances = np.where(chromatic, np.minimum(distances, 8 - distances), distances)
+        distances = np.where(names == selected_name, 0, distances)
+        return distances.astype(float)
 
     @staticmethod
     def _color_name_bins(lch: np.ndarray) -> np.ndarray:
@@ -661,13 +722,15 @@ class Palette:
 
             trial_rgb = selected_rgb.copy()
             trial_rgb[replace_index] = pool.rgb[choice]
-            trial_lab = rgb01_to_oklab(trial_rgb)
-            trial_lch = oklab_to_oklch(trial_lab)
-            trial_sim_lab = (
-                simulated_oklab(trial_rgb, self.colorblind)
-                if self.colorblind is not None
-                else np.empty((0, 3), dtype=float)
-            )
+            trial_lab = selected_lab.copy()
+            trial_lab[replace_index] = pool.lab[choice]
+            trial_lch = selected_lch.copy()
+            trial_lch[replace_index] = pool.lch[choice]
+            if self.colorblind is not None:
+                trial_sim_lab = selected_sim_lab.copy()
+                trial_sim_lab[replace_index] = pool.simulated_lab[choice]
+            else:
+                trial_sim_lab = np.empty((0, 3), dtype=float)
             trial_score = self._categorical_set_score(
                 trial_lab,
                 trial_lch,
@@ -722,15 +785,26 @@ class Palette:
 
     @staticmethod
     def _pairwise_lightness(lch: np.ndarray) -> np.ndarray:
-        distances = np.abs(lch[:, None, 0] - lch[None, :, 0])
-        mask = ~np.eye(len(lch), dtype=bool)
-        return distances[mask]
+        if len(lch) <= 1:
+            return np.empty((0,), dtype=float)
+        row, col = np.triu_indices(len(lch), k=1)
+        return np.abs(lch[row, 0] - lch[col, 0])
 
     @classmethod
     def _color_name_duplicate_penalty(cls, lch: np.ndarray) -> float:
         names = cls._color_name_bins(lch)
         _, counts = np.unique(names, return_counts=True)
         return float(np.sum(np.clip(counts - 1, 0, None)))
+
+    @staticmethod
+    def _distance_to_point(
+        values: np.ndarray,
+        point: np.ndarray,
+        values_norm_sq: np.ndarray,
+    ) -> np.ndarray:
+        point_norm_sq = float(np.dot(point, point))
+        distances_sq = values_norm_sq + point_norm_sq - 2.0 * values @ point
+        return np.sqrt(np.maximum(distances_sq, 0.0))
 
     @staticmethod
     def _best_available(scores: np.ndarray) -> int:

@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.2 - 2026-07-02
+
+- Add incremental minimum-distance caches for aesthetic and categorical greedy
+  selection, reducing repeated pool-to-selection scans.
+- Preserve generated OKLCH candidates through gamut filtering to avoid
+  RGB-to-OKLab-to-OKLCH round trips during candidate pool construction.
+- Remove repeated `vstack` accumulation from selection loops.
+- Reuse pool metadata during categorical refinement.
+
 ## v0.2.1 - 2026-07-02
 
 - Optimize palette generation by removing redundant selected-color conversions

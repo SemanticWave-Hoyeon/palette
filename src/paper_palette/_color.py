@@ -127,6 +127,16 @@ def oklch_to_rgb01_if_in_gamut(lch: np.ndarray, tolerance: float = 1e-7) -> np.n
     return np.clip(rgb[mask], 0.0, 1.0)
 
 
+def oklch_to_rgb01_and_lch_if_in_gamut(
+    lch: np.ndarray,
+    tolerance: float = 1e-7,
+) -> tuple[np.ndarray, np.ndarray]:
+    lch = np.asarray(lch, dtype=float)
+    rgb = np.asarray(oklab_to_rgb01(oklch_to_oklab(lch)), dtype=float)
+    mask = np.all((rgb >= -tolerance) & (rgb <= 1.0 + tolerance), axis=-1)
+    return np.clip(rgb[mask], 0.0, 1.0), lch[mask]
+
+
 def circular_mean_degrees(values: np.ndarray) -> float:
     radians = np.radians(np.asarray(values, dtype=float))
     x = np.cos(radians).mean()
