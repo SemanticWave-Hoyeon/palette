@@ -143,5 +143,11 @@ def hue_distance(a: np.ndarray | float, b: np.ndarray | float) -> np.ndarray:
 def pairwise_min_distance(lab: np.ndarray, selected: np.ndarray) -> np.ndarray:
     if selected.size == 0:
         return np.full((len(lab),), np.inf)
-    distances = np.linalg.norm(lab[:, None, :] - selected[None, :, :], axis=-1)
-    return distances.min(axis=1)
+    values = np.asarray(lab, dtype=float)
+    selected = np.asarray(selected, dtype=float)
+    distances_sq = (
+        np.sum(values * values, axis=1)[:, None]
+        + np.sum(selected * selected, axis=1)[None, :]
+        - 2.0 * values @ selected.T
+    )
+    return np.sqrt(np.maximum(distances_sq.min(axis=1), 0.0))

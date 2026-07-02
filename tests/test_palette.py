@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from paper_palette import Palette, PaperPalette, list_presets, preset_colors
-from paper_palette._color import circular_mean_degrees, hex_to_rgb01, hue_distance, normalize_hex, oklab_to_oklch, rgb01_to_oklab
+from paper_palette._color import circular_mean_degrees, hex_to_rgb01, hue_distance, normalize_hex, oklab_to_oklch, pairwise_min_distance, rgb01_to_oklab
 from paper_palette._colorblind import simulated_oklab
 from paper_palette._palette import HUE_SORT_START_DEGREES, Palette as InternalPalette, _sort_generated_colors
 from paper_palette._png import save_palette_png
@@ -24,6 +24,13 @@ def test_normalize_hex_accepts_short_and_long_forms():
 def test_normalize_hex_rejects_invalid_values(value):
     with pytest.raises(ValueError):
         normalize_hex(value)
+
+
+def test_pairwise_min_distance_matches_naive_norm():
+    values = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.2, 0.1]])
+    selected = np.array([[0.2, 0.2, 0.2], [0.8, 0.3, 0.1]])
+    expected = np.linalg.norm(values[:, None, :] - selected[None, :, :], axis=-1).min(axis=1)
+    assert np.allclose(pairwise_min_distance(values, selected), expected)
 
 
 def test_import_smoke():

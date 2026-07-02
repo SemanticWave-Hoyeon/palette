@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.1 - 2026-07-02
+
+- Optimize palette generation by removing redundant selected-color conversions
+  and repeated distance calculations.
+- Avoid storing and computing simulated color-vision arrays when colorblind
+  mode is disabled.
+- Precompute categorical pool scores that do not change across selection steps.
+- Reduce temporary memory in pairwise distance calculations.
+
 ## v0.2.0 - 2026-07-02
 
 - Sort newly generated colors by OKLCH hue so random palettes display in a
