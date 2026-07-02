@@ -1,6 +1,6 @@
 # Paper Palette
 
-[한국어 README](README.ko.md)
+[한국어](README.ko.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
 
 A lightweight Python tool for generating publication-ready and colorblind-aware
 palettes using perceptual color spaces.

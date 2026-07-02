@@ -1,6 +1,6 @@
 # Paper Palette
 
-[English README](README.md)
+[English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
 
 Paper Palette는 색상 팔레트를 만드는 Python 라이브러리이자 작은 데스크톱 UI입니다.
 지각 색공간을 이용해 논문 그림에 바로 쓸 수 있고 색각 이상 조건도 고려한
