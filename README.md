@@ -9,6 +9,40 @@ It supports two different workflows:
 The library returns uppercase `#RRGGBB` strings and can preserve user-supplied
 colors while generating compatible remaining colors.
 
+## Examples
+
+**Aesthetic palette**
+
+![Aesthetic palette generated with seed 42](docs/assets/aesthetic_seed42.png)
+
+```python
+Palette(mode="aesthetic", seed=42).generate(n=6)
+```
+
+**Categorical palette**
+
+![Categorical palette generated with seed 42](docs/assets/categorical_seed42.png)
+
+```python
+Palette(mode="categorical", seed=42).generate(n=8)
+```
+
+**Colorblind-aware categorical palette**
+
+![Deuteranopia-aware categorical palette generated with seed 42](docs/assets/deuteranopia_seed42.png)
+
+```python
+Palette(mode="categorical", colorblind="deuteranopia", seed=42).generate(n=6)
+```
+
+**Observable preset**
+
+![Observable preset palette](docs/assets/preset_observable.png)
+
+```python
+preset_colors("observable")
+```
+
 ## Features
 
 - Generates cohesive design palettes with `mode="aesthetic"`.
