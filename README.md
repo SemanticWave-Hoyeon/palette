@@ -57,7 +57,27 @@ preset_colors("observable")
 
 ## Installation
 
-From the project root:
+Start by downloading the project from GitHub:
+
+```bash
+git clone https://github.com/SemanticWave-Hoyeon/palette.git
+cd palette
+```
+
+Using a virtual environment is recommended:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+On Windows PowerShell, activate it with:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the package from the project root:
 
 ```bash
 python3 -m pip install -e .
@@ -66,6 +86,21 @@ python3 -m pip install -e .
 This installs the `palette` package and the `palette-ui` command. Editable
 installation is recommended while the project is still local or under active
 development.
+
+Check that the library works:
+
+```bash
+python3 - <<'PY'
+from palette import Palette
+print(Palette(mode="categorical", seed=42).generate(n=5))
+PY
+```
+
+Run the desktop UI:
+
+```bash
+palette-ui
+```
 
 Install test dependencies when developing:
 

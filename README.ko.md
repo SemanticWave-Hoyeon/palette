@@ -57,7 +57,27 @@ preset_colors("observable")
 
 ## 설치
 
-프로젝트 루트에서 실행합니다.
+먼저 GitHub에서 프로젝트를 내려받습니다.
+
+```bash
+git clone https://github.com/SemanticWave-Hoyeon/palette.git
+cd palette
+```
+
+가상환경을 만들어 쓰는 것을 권장합니다.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Windows PowerShell에서는 다음처럼 활성화합니다.
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+프로젝트 루트에서 패키지를 설치합니다.
 
 ```bash
 python3 -m pip install -e .
@@ -65,6 +85,21 @@ python3 -m pip install -e .
 
 이 명령은 `palette` 패키지와 `palette-ui` 실행 명령을 설치합니다.
 로컬에서 개발하거나 바로 수정해 가며 쓸 때는 editable 설치가 편합니다.
+
+설치가 잘 됐는지 간단히 확인합니다.
+
+```bash
+python3 - <<'PY'
+from palette import Palette
+print(Palette(mode="categorical", seed=42).generate(n=5))
+PY
+```
+
+데스크톱 UI는 다음 명령으로 실행합니다.
+
+```bash
+palette-ui
+```
 
 테스트까지 실행하려면 다음처럼 설치합니다.
 
