@@ -253,6 +253,19 @@ def test_ui_text_color_uses_readable_contrast():
     assert PaletteApp._text_color(None) == "#333333"
 
 
+def test_ui_color_picker_hsv_helpers_round_trip_hex():
+    hue, saturation, value = PaletteApp._hex_to_hsv("#1E88E5")
+    assert PaletteApp._hsv_to_hex(hue, saturation, value) == "#1E88E5"
+    assert PaletteApp._hsv_to_hex(0.0, 1.0, 1.0) == "#FF0000"
+    assert PaletteApp._hsv_to_hex(1.0, 1.0, 1.0) == "#FF0000"
+
+
+def test_ui_color_picker_clamps_hsv_values():
+    assert PaletteApp._clamp_unit(-0.3) == 0.0
+    assert PaletteApp._clamp_unit(1.4) == 1.0
+    assert PaletteApp._hsv_to_hex(-0.5, 2.0, 2.0) == "#FF0000"
+
+
 def test_save_palette_png_writes_valid_png(tmp_path):
     output = save_palette_png(["#1E88E5", "#FFC107"], tmp_path / "palette.png")
     data = output.read_bytes()

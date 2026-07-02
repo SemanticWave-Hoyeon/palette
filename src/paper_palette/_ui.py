@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import colorsys
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
@@ -27,6 +28,10 @@ BACKGROUND_OPTIONS = {
 
 PRESET_OPTIONS = {"None": None}
 PRESET_OPTIONS.update({preset_label(name): name for name in list_presets()})
+
+PICKER_SIZE = 180
+HUE_BAR_WIDTH = 26
+PICKER_STEP = 3
 
 
 def preset_palette_state(
@@ -305,30 +310,169 @@ class PaletteApp(tk.Tk):
         window.transient(self)
         window.grab_set()
 
-        value = tk.StringVar(value=self.colors[index] or "#1E88E5")
-        preview = tk.Frame(window, width=240, height=96, bg=value.get())
-        preview.grid(row=0, column=0, columnspan=3, padx=16, pady=(16, 10), sticky="ew")
+        initial_color = normalize_hex(self.colors[index] or "#1E88E5")
+        hue, saturation, value_level = self._hex_to_hsv(initial_color)
+        picker_state = {"hue": hue, "saturation": saturation, "value": value_level}
+        syncing = {"active": False}
+
+        value = tk.StringVar(value=initial_color)
+
+        body = tk.Frame(window, padx=16, pady=16)
+        body.grid(row=0, column=0, sticky="nsew")
+
+        sv_canvas = tk.Canvas(
+            body,
+            width=PICKER_SIZE,
+            height=PICKER_SIZE,
+            highlightthickness=1,
+            highlightbackground="#B8B8B8",
+            cursor="crosshair",
+        )
+        sv_canvas.grid(row=0, column=0, rowspan=4, sticky="n")
+
+        hue_canvas = tk.Canvas(
+            body,
+            width=HUE_BAR_WIDTH,
+            height=PICKER_SIZE,
+            highlightthickness=1,
+            highlightbackground="#B8B8B8",
+            cursor="sb_v_double_arrow",
+        )
+        hue_canvas.grid(row=0, column=1, rowspan=4, padx=(10, 16), sticky="n")
+
+        preview = tk.Frame(
+            body,
+            width=160,
+            height=72,
+            bg=value.get(),
+            highlightthickness=1,
+            highlightbackground="#B8B8B8",
+        )
+        preview.grid(row=0, column=2, columnspan=2, sticky="ew")
         preview.grid_propagate(False)
 
-        tk.Label(window, text="HEX").grid(row=1, column=0, padx=(16, 6), pady=8, sticky="w")
-        entry = tk.Entry(window, textvariable=value, width=14, font=("Menlo", 13))
-        entry.grid(row=1, column=1, padx=6, pady=8, sticky="w")
+        tk.Label(body, text="HEX").grid(row=1, column=2, pady=(18, 6), sticky="w")
+        entry = tk.Entry(body, textvariable=value, width=14, font=("Menlo", 13))
+        entry.grid(row=1, column=3, padx=(8, 0), pady=(18, 6), sticky="w")
 
         error_var = tk.StringVar(value="")
-        tk.Label(window, textvariable=error_var, fg="#B00020").grid(
-            row=2,
-            column=0,
-            columnspan=3,
-            padx=16,
-            sticky="w",
-        )
+        tk.Label(body, textvariable=error_var, fg="#B00020").grid(row=2, column=2, columnspan=2, sticky="w")
+
+        def draw_hue_bar() -> None:
+            hue_canvas.delete("all")
+            for y in range(PICKER_SIZE):
+                color = self._hsv_to_hex(y / (PICKER_SIZE - 1), 1.0, 1.0)
+                hue_canvas.create_line(0, y, HUE_BAR_WIDTH, y, fill=color)
+            draw_hue_marker()
+
+        def draw_sv_plane() -> None:
+            sv_canvas.delete("all")
+            hue_value = picker_state["hue"]
+            for x in range(0, PICKER_SIZE, PICKER_STEP):
+                saturation_value = x / (PICKER_SIZE - 1)
+                for y in range(0, PICKER_SIZE, PICKER_STEP):
+                    brightness_value = 1.0 - (y / (PICKER_SIZE - 1))
+                    color = self._hsv_to_hex(hue_value, saturation_value, brightness_value)
+                    sv_canvas.create_rectangle(
+                        x,
+                        y,
+                        x + PICKER_STEP,
+                        y + PICKER_STEP,
+                        fill=color,
+                        outline=color,
+                    )
+            draw_sv_marker()
+
+        def draw_sv_marker() -> None:
+            sv_canvas.delete("marker")
+            x = picker_state["saturation"] * (PICKER_SIZE - 1)
+            y = (1.0 - picker_state["value"]) * (PICKER_SIZE - 1)
+            radius = 6
+            sv_canvas.create_oval(
+                x - radius,
+                y - radius,
+                x + radius,
+                y + radius,
+                outline="#FFFFFF",
+                width=2,
+                tags="marker",
+            )
+            sv_canvas.create_oval(
+                x - radius - 1,
+                y - radius - 1,
+                x + radius + 1,
+                y + radius + 1,
+                outline="#111111",
+                width=1,
+                tags="marker",
+            )
+
+        def draw_hue_marker() -> None:
+            hue_canvas.delete("marker")
+            y = picker_state["hue"] * (PICKER_SIZE - 1)
+            hue_canvas.create_rectangle(
+                0,
+                y - 3,
+                HUE_BAR_WIDTH,
+                y + 3,
+                outline="#111111",
+                width=2,
+                tags="marker",
+            )
+            hue_canvas.create_rectangle(
+                2,
+                y - 1,
+                HUE_BAR_WIDTH - 2,
+                y + 1,
+                outline="#FFFFFF",
+                width=1,
+                tags="marker",
+            )
+
+        def set_value_from_picker() -> None:
+            syncing["active"] = True
+            value.set(
+                self._hsv_to_hex(
+                    picker_state["hue"],
+                    picker_state["saturation"],
+                    picker_state["value"],
+                )
+            )
+            syncing["active"] = False
+            refresh_preview()
 
         def refresh_preview(*_args: object) -> None:
             try:
-                preview.configure(bg=normalize_hex(value.get()))
-                error_var.set("")
+                normalized = normalize_hex(value.get())
             except ValueError:
                 error_var.set("Invalid HEX color.")
+                return
+
+            preview.configure(bg=normalized)
+            error_var.set("")
+            if syncing["active"]:
+                return
+            new_hue, new_saturation, new_value = self._hex_to_hsv(normalized)
+            picker_state["hue"] = new_hue
+            picker_state["saturation"] = new_saturation
+            picker_state["value"] = new_value
+            draw_sv_plane()
+            draw_hue_marker()
+
+        def select_sv(event: tk.Event) -> None:
+            x = self._clamp(float(event.x), 0.0, PICKER_SIZE - 1)
+            y = self._clamp(float(event.y), 0.0, PICKER_SIZE - 1)
+            picker_state["saturation"] = x / (PICKER_SIZE - 1)
+            picker_state["value"] = 1.0 - (y / (PICKER_SIZE - 1))
+            draw_sv_marker()
+            set_value_from_picker()
+
+        def select_hue(event: tk.Event) -> None:
+            y = self._clamp(float(event.y), 0.0, PICKER_SIZE - 1)
+            picker_state["hue"] = y / (PICKER_SIZE - 1)
+            draw_sv_plane()
+            draw_hue_marker()
+            set_value_from_picker()
 
         def apply() -> None:
             try:
@@ -350,18 +494,37 @@ class PaletteApp(tk.Tk):
             window.destroy()
 
         value.trace_add("write", refresh_preview)
-        tk.Button(window, text="Apply", command=apply).grid(row=3, column=0, padx=16, pady=16, sticky="ew")
-        tk.Button(window, text="Clear", command=clear).grid(row=3, column=1, padx=6, pady=16, sticky="ew")
-        tk.Button(window, text="Cancel", command=window.destroy).grid(
+        sv_canvas.bind("<Button-1>", select_sv)
+        sv_canvas.bind("<B1-Motion>", select_sv)
+        hue_canvas.bind("<Button-1>", select_hue)
+        hue_canvas.bind("<B1-Motion>", select_hue)
+
+        tk.Button(body, text="Apply", command=apply).grid(
             row=3,
             column=2,
-            padx=(6, 16),
-            pady=16,
+            padx=(0, 8),
+            pady=(22, 0),
+            sticky="ew",
+        )
+        tk.Button(body, text="Clear", command=clear).grid(
+            row=3,
+            column=3,
+            padx=(0, 0),
+            pady=(22, 0),
+            sticky="ew",
+        )
+        tk.Button(body, text="Cancel", command=window.destroy).grid(
+            row=4,
+            column=2,
+            columnspan=2,
+            pady=(8, 0),
             sticky="ew",
         )
         entry.focus_set()
         entry.select_range(0, tk.END)
         entry.bind("<Return>", lambda _event: apply())
+        draw_hue_bar()
+        draw_sv_plane()
         refresh_preview()
 
     def copy_array(self) -> None:
@@ -396,6 +559,31 @@ class PaletteApp(tk.Tk):
         blue = int(hex_color[5:7], 16)
         luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255.0
         return "#111111" if luminance > 0.58 else "#FFFFFF"
+
+    @staticmethod
+    def _hex_to_hsv(hex_color: str) -> tuple[float, float, float]:
+        normalized = normalize_hex(hex_color)
+        red = int(normalized[1:3], 16) / 255.0
+        green = int(normalized[3:5], 16) / 255.0
+        blue = int(normalized[5:7], 16) / 255.0
+        return colorsys.rgb_to_hsv(red, green, blue)
+
+    @staticmethod
+    def _hsv_to_hex(hue: float, saturation: float, value: float) -> str:
+        red, green, blue = colorsys.hsv_to_rgb(
+            PaletteApp._clamp_unit(hue),
+            PaletteApp._clamp_unit(saturation),
+            PaletteApp._clamp_unit(value),
+        )
+        return f"#{round(red * 255):02X}{round(green * 255):02X}{round(blue * 255):02X}"
+
+    @staticmethod
+    def _clamp_unit(value: float) -> float:
+        return PaletteApp._clamp(value, 0.0, 1.0)
+
+    @staticmethod
+    def _clamp(value: float, low: float, high: float) -> float:
+        return max(low, min(high, value))
 
 
 def main() -> None:
