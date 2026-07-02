@@ -154,12 +154,16 @@ colors = PaperPalette(mode="aesthetic", seed=42).generate(n=5)
 print(colors)
 ```
 
+![Library usage aesthetic palette](docs/assets/usage_aesthetic_n5.png)
+
 Generate a distinct chart palette:
 
 ```python
 colors = PaperPalette(mode="categorical", seed=42).generate(n=8)
 print(colors)
 ```
+
+![Library usage categorical palette](docs/assets/categorical_seed42.png)
 
 Generate a colorblind-aware categorical palette:
 
@@ -171,6 +175,8 @@ colors = PaperPalette(
 ).generate(n=6)
 ```
 
+![Library usage deuteranopia-aware categorical palette](docs/assets/deuteranopia_seed42.png)
+
 Generate for a dark chart background:
 
 ```python
@@ -180,6 +186,8 @@ colors = PaperPalette(
     seed=42,
 ).generate(n=7)
 ```
+
+![Library usage dark-background categorical palette](docs/assets/usage_categorical_dark_seed42.png)
 
 Seed colors are preserved at the beginning of the returned palette:
 
@@ -191,6 +199,8 @@ colors = PaperPalette(mode="aesthetic").generate(
 print(colors)
 # ["#1E88E5", ...]
 ```
+
+![Library usage aesthetic palette with a preserved seed color](docs/assets/usage_seed_color_aesthetic.png)
 
 Extend a locked brand or manuscript color into a full chart palette:
 
@@ -206,6 +216,8 @@ colors = PaperPalette(
 )
 ```
 
+![Library usage categorical palette extended from seed colors](docs/assets/usage_seed_colors_categorical.png)
+
 Use an accessible color-cycle preset:
 
 ```python
@@ -213,6 +225,8 @@ from paper_palette import preset_colors
 
 colors = preset_colors("accessible8")
 ```
+
+![Library usage accessible8 preset palette](docs/assets/usage_accessible8.png)
 
 Supported `mode` values:
 

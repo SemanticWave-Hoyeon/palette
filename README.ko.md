@@ -151,6 +151,8 @@ colors = PaperPalette(mode="aesthetic", seed=42).generate(n=5)
 print(colors)
 ```
 
+![Library usage aesthetic palette](docs/assets/usage_aesthetic_n5.png)
+
 논문 그래프나 차트처럼 색을 서로 확실히 구분해야 할 때는 `categorical`
 모드를 씁니다.
 
@@ -158,6 +160,8 @@ print(colors)
 colors = PaperPalette(mode="categorical", seed=42).generate(n=8)
 print(colors)
 ```
+
+![Library usage categorical palette](docs/assets/categorical_seed42.png)
 
 색각 이상 조건을 고려할 수도 있습니다.
 
@@ -169,6 +173,8 @@ colors = PaperPalette(
 ).generate(n=6)
 ```
 
+![Library usage deuteranopia-aware categorical palette](docs/assets/deuteranopia_seed42.png)
+
 어두운 배경의 차트에 쓸 팔레트도 만들 수 있습니다.
 
 ```python
@@ -178,6 +184,8 @@ colors = PaperPalette(
     seed=42,
 ).generate(n=7)
 ```
+
+![Library usage dark-background categorical palette](docs/assets/usage_categorical_dark_seed42.png)
 
 이미 정해 둔 색이 있으면 `seed_colors`로 넘깁니다. 입력한 색은 반환된
 팔레트 앞쪽에 그대로 유지됩니다.
@@ -190,6 +198,8 @@ colors = PaperPalette(mode="aesthetic").generate(
 print(colors)
 # ["#1E88E5", ...]
 ```
+
+![Library usage aesthetic palette with a preserved seed color](docs/assets/usage_seed_color_aesthetic.png)
 
 이미 정한 원고 색이나 브랜드 색을 잠근 채 나머지 색을 채울 수도 있습니다.
 
@@ -205,6 +215,8 @@ colors = PaperPalette(
 )
 ```
 
+![Library usage categorical palette extended from seed colors](docs/assets/usage_seed_colors_categorical.png)
+
 접근성을 고려한 Petroff color cycle 프리셋도 바로 쓸 수 있습니다.
 
 ```python
@@ -212,6 +224,8 @@ from paper_palette import preset_colors
 
 colors = preset_colors("accessible8")
 ```
+
+![Library usage accessible8 preset palette](docs/assets/usage_accessible8.png)
 
 지원하는 `mode` 값은 다음과 같습니다.
 
