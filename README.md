@@ -182,6 +182,8 @@ print(palette)
 
 ## Desktop UI
 
+![Palette desktop UI with the Observable preset applied](docs/assets/desktop_ui.png)
+
 Run the UI with either command:
 
 ```bash
