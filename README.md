@@ -1,5 +1,7 @@
 # Palette
 
+[한국어 README](README.ko.md)
+
 Palette is a Python library and small desktop UI for generating color palettes.
 It supports two different workflows:
 
