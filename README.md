@@ -95,6 +95,13 @@ This installs the `paper_palette` package and the `paper-palette-ui` command. Ed
 installation is recommended while the project is still local or under active
 development.
 
+If you prefer installing dependencies explicitly first, use:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 -m pip install -e .
+```
+
 Check that the library works:
 
 ```bash
@@ -113,7 +120,8 @@ paper-palette-ui
 Install test dependencies when developing:
 
 ```bash
-python3 -m pip install -e ".[test]"
+python3 -m pip install -r requirements-dev.txt
+python3 -m pip install -e .
 python3 -m pytest -q
 ```
 
@@ -379,9 +387,12 @@ copyright and license notice to be preserved.
 ## Development
 
 ```bash
-python3 -m pip install -e ".[test]"
+python3 -m pip install -r requirements-dev.txt
+python3 -m pip install -e .
 python3 -m pytest -q
 python3 -m compileall -q src paper_palette_ui.py palette_ui.py
+python3 -m build
+python3 -m twine check dist/*
 ```
 
 The project intentionally avoids image-generation dependencies for PNG export;

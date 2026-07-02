@@ -1,0 +1,7 @@
+# Development and verification dependencies.
+# Install the package itself with: python3 -m pip install -e .
+-r requirements.txt
+
+pytest>=8
+build>=1.2
+twine>=5.0

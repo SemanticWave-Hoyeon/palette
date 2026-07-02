@@ -1,0 +1,3 @@
+# Runtime dependencies for local installs.
+# Keep this in sync with [project].dependencies in pyproject.toml.
+numpy>=1.24
