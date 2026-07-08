@@ -24,62 +24,62 @@
         <button class="primary-action" id="rollButton" type="button">Roll</button>
       </header>
 
-      <section class="control-panel" aria-label="Generator controls">
-        <div class="control-block settings-block">
-          <h2>Generator</h2>
-          <div class="control-grid">
-            <label>
-              <span>n</span>
-              <input id="countInput" type="number" min="1" max="24" value="6" />
-            </label>
-            <label>
-              <span>mode</span>
-              <select id="modeSelect">
-                <option value="aesthetic">aesthetic</option>
-                <option value="categorical">categorical</option>
-              </select>
-            </label>
-            <label>
-              <span>harmony</span>
-              <select id="harmonySelect">
-                <option value="stable">stable</option>
-                <option value="expressive">expressive</option>
-                <option value="analogous">analogous</option>
-                <option value="monochrome_accent">monochrome_accent</option>
-                <option value="split_complementary">split_complementary</option>
-                <option value="triadic">triadic</option>
-              </select>
-            </label>
-            <label>
-              <span>colorblind</span>
-              <select id="colorblindSelect">
-                <option value="">None</option>
-                <option value="protanopia">protanopia</option>
-                <option value="deuteranopia">deuteranopia</option>
-                <option value="tritanopia">tritanopia</option>
-                <option value="achromatopsia">achromatopsia</option>
-              </select>
-            </label>
-            <label>
-              <span>background</span>
-              <select id="backgroundSelect">
-                <option value="white">white</option>
-                <option value="black">black</option>
-                <option value="light">light</option>
-                <option value="dark">dark</option>
-              </select>
-            </label>
-            <label class="seed-toggle">
-              <span>fixed seed</span>
-              <div class="inline-seed">
-                <input id="seedEnabled" type="checkbox" />
-                <input id="seedInput" type="number" min="0" value="42" disabled />
-              </div>
-            </label>
+      <section class="app-body">
+        <aside class="control-panel" aria-label="Generator controls">
+          <div class="control-block settings-block">
+            <h2>Generator</h2>
+            <div class="control-grid">
+              <label>
+                <span>n</span>
+                <input id="countInput" type="number" min="1" max="24" value="6" />
+              </label>
+              <label>
+                <span>background</span>
+                <select id="backgroundSelect">
+                  <option value="white">white</option>
+                  <option value="black">black</option>
+                  <option value="light">light</option>
+                  <option value="dark">dark</option>
+                </select>
+              </label>
+              <label class="wide-control">
+                <span>mode</span>
+                <select id="modeSelect">
+                  <option value="aesthetic">aesthetic</option>
+                  <option value="categorical">categorical</option>
+                </select>
+              </label>
+              <label class="wide-control">
+                <span>harmony</span>
+                <select id="harmonySelect">
+                  <option value="stable">stable</option>
+                  <option value="expressive">expressive</option>
+                  <option value="analogous">analogous</option>
+                  <option value="monochrome_accent">monochrome_accent</option>
+                  <option value="split_complementary">split_complementary</option>
+                  <option value="triadic">triadic</option>
+                </select>
+              </label>
+              <label class="wide-control">
+                <span>colorblind</span>
+                <select id="colorblindSelect">
+                  <option value="">None</option>
+                  <option value="protanopia">protanopia</option>
+                  <option value="deuteranopia">deuteranopia</option>
+                  <option value="tritanopia">tritanopia</option>
+                  <option value="achromatopsia">achromatopsia</option>
+                </select>
+              </label>
+              <label class="seed-toggle wide-control">
+                <span>fixed seed</span>
+                <div class="inline-seed">
+                  <input id="seedEnabled" type="checkbox" />
+                  <input id="seedInput" type="number" min="0" value="42" disabled />
+                </div>
+              </label>
+            </div>
           </div>
-        </div>
 
-        <div class="control-row">
           <div class="control-block preset-block">
             <h2>Preset</h2>
             <div class="preset-controls">
@@ -98,20 +98,25 @@
               <button id="clearLocksButton" type="button">Clear Locks</button>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section class="workspace" aria-label="Generated palette workspace">
-        <section class="palette-grid" id="paletteGrid" aria-label="Generated palette"></section>
-        <aside class="output-panel" aria-label="Palette output">
-          <div class="preview-strip" id="previewStrip" aria-hidden="true"></div>
-          <label>
-            <span>Python array</span>
-            <textarea id="paletteOutput" readonly spellcheck="false"></textarea>
-          </label>
         </aside>
+
+        <section class="workbench">
+          <div class="workbench-header">
+            <h2>Palette</h2>
+            <p class="status-bar" id="statusBar" role="status">Ready.</p>
+          </div>
+          <section class="workspace" aria-label="Generated palette workspace">
+            <section class="palette-grid" id="paletteGrid" aria-label="Generated palette"></section>
+            <aside class="output-panel" aria-label="Palette output">
+              <div class="preview-strip" id="previewStrip" aria-hidden="true"></div>
+              <label>
+                <span>Python array</span>
+                <textarea id="paletteOutput" readonly spellcheck="false"></textarea>
+              </label>
+            </aside>
+          </section>
+        </section>
       </section>
-      <p class="status-bar" id="statusBar" role="status">Ready.</p>
     </main>
 
     <dialog id="editDialog" class="edit-dialog">
