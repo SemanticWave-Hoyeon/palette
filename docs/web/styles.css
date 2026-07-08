@@ -53,6 +53,10 @@ button {
     box-shadow 120ms ease;
 }
 
+.control-panel button {
+  width: 100%;
+}
+
 button:hover {
   background: #f8fafc;
 }
@@ -175,7 +179,7 @@ label > span {
 input,
 select,
 textarea {
-  min-height: 40px;
+  min-height: 44px;
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -209,8 +213,13 @@ textarea {
 .preset-controls {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
-  align-items: end;
+  gap: var(--unit);
+  align-items: stretch;
+}
+
+.preset-controls > *,
+.button-row > * {
+  min-width: 0;
 }
 
 .button-row {
