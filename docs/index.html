@@ -12,17 +12,21 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="hero" aria-label="Palette generator">
-        <div>
+      <header class="app-header">
+        <div class="brand-block">
           <h1>Paper Palette</h1>
-          <p>Generate publication-ready palettes directly in your browser.</p>
+          <div class="metric-row" aria-label="Palette status">
+            <span id="metricCount">6 colors</span>
+            <span id="metricLocked">0 locked</span>
+            <span id="metricMode">aesthetic</span>
+          </div>
         </div>
         <button class="primary-action" id="rollButton" type="button">Roll</button>
-      </section>
+      </header>
 
       <section class="control-panel" aria-label="Generator controls">
         <div class="control-block settings-block">
-          <h2>Settings</h2>
+          <h2>Generator</h2>
           <div class="control-grid">
             <label>
               <span>n</span>
@@ -97,8 +101,17 @@
         </div>
       </section>
 
-      <section class="palette-grid" id="paletteGrid" aria-label="Generated palette"></section>
-      <p class="status-bar" id="statusBar" role="status">Set n, roll, click to lock, use the color picker to edit.</p>
+      <section class="workspace" aria-label="Generated palette workspace">
+        <section class="palette-grid" id="paletteGrid" aria-label="Generated palette"></section>
+        <aside class="output-panel" aria-label="Palette output">
+          <div class="preview-strip" id="previewStrip" aria-hidden="true"></div>
+          <label>
+            <span>Python array</span>
+            <textarea id="paletteOutput" readonly spellcheck="false"></textarea>
+          </label>
+        </aside>
+      </section>
+      <p class="status-bar" id="statusBar" role="status">Ready.</p>
     </main>
 
     <dialog id="editDialog" class="edit-dialog">

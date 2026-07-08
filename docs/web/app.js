@@ -58,6 +58,7 @@ const state = {
   colors: [],
   locked: [],
   editIndex: null,
+  clickTimer: null,
 };
 
 function init() {
@@ -76,6 +77,11 @@ function init() {
     "saveButton",
     "clearLocksButton",
     "paletteGrid",
+    "paletteOutput",
+    "previewStrip",
+    "metricCount",
+    "metricLocked",
+    "metricMode",
     "statusBar",
     "editDialog",
     "dialogColorInput",
@@ -104,6 +110,7 @@ function populatePresets() {
 
 function bindEvents() {
   els.rollButton.addEventListener("click", rollPalette);
+  els.modeSelect.addEventListener("change", updateOutput);
   els.countInput.addEventListener("change", () => setCount(readCount()));
   els.seedEnabled.addEventListener("change", () => {
     els.seedInput.disabled = !els.seedEnabled.checked;
@@ -226,24 +233,58 @@ function renderSwatches() {
     swatch.className = `swatch${state.locked[index] ? " locked" : ""}`;
     swatch.style.background = color || "#EEF1F5";
     swatch.style.color = textColor(color);
-    swatch.title = "Click to lock. Double-click to edit.";
-    swatch.addEventListener("click", () => toggleLock(index));
+    swatch.title = color || "Empty color";
+    swatch.addEventListener("click", () => scheduleToggleLock(index));
     swatch.addEventListener("dblclick", (event) => {
       event.preventDefault();
+      clearPendingClick();
       openEditor(index);
     });
+
+    const top = document.createElement("span");
+    top.className = "swatch-top";
+
+    const number = document.createElement("span");
+    number.className = "swatch-index";
+    number.textContent = String(index + 1).padStart(2, "0");
+    top.appendChild(number);
+
+    const badge = document.createElement("span");
+    badge.className = "lock-badge";
+    badge.textContent = state.locked[index] ? "LOCKED" : "OPEN";
+    top.appendChild(badge);
+    swatch.appendChild(top);
 
     const code = document.createElement("span");
     code.className = "swatch-code";
     code.textContent = color || "EMPTY";
     swatch.appendChild(code);
 
-    const badge = document.createElement("span");
-    badge.className = "lock-badge";
-    badge.textContent = state.locked[index] ? "LOCKED" : "";
-    swatch.appendChild(badge);
+    const bottom = document.createElement("span");
+    bottom.className = "swatch-bottom";
+    const hint = document.createElement("span");
+    hint.className = "swatch-hint";
+    hint.textContent = state.locked[index] ? "fixed" : "random";
+    bottom.appendChild(hint);
+    swatch.appendChild(bottom);
     els.paletteGrid.appendChild(swatch);
   });
+  updateOutput();
+}
+
+function scheduleToggleLock(index) {
+  clearPendingClick();
+  state.clickTimer = window.setTimeout(() => {
+    state.clickTimer = null;
+    toggleLock(index);
+  }, 180);
+}
+
+function clearPendingClick() {
+  if (state.clickTimer !== null) {
+    window.clearTimeout(state.clickTimer);
+    state.clickTimer = null;
+  }
 }
 
 function toggleLock(index) {
@@ -257,6 +298,23 @@ function clearLocks() {
   state.locked = state.locked.map(() => false);
   renderSwatches();
   setStatus("Cleared all locks.");
+}
+
+function updateOutput() {
+  const colors = state.colors.filter(Boolean);
+  const locked = state.locked.filter(Boolean).length;
+  els.metricCount.textContent = `${state.colors.length} ${state.colors.length === 1 ? "color" : "colors"}`;
+  els.metricLocked.textContent = `${locked} locked`;
+  els.metricMode.textContent = els.modeSelect.value;
+  els.paletteOutput.value = pythonArray(colors);
+  els.previewStrip.innerHTML = "";
+  els.previewStrip.style.setProperty("--preview-count", String(Math.max(colors.length, 1)));
+  for (const color of colors) {
+    const item = document.createElement("span");
+    item.className = "preview-swatch";
+    item.style.background = color;
+    els.previewStrip.appendChild(item);
+  }
 }
 
 function openEditor(index) {
@@ -299,13 +357,19 @@ function clearEditedColor() {
 
 async function copyArray() {
   const colors = state.colors.filter(Boolean);
-  const text = `[${colors.map((color) => `"${color}"`).join(", ")}]`;
+  const text = pythonArray(colors);
   try {
     await navigator.clipboard.writeText(text);
     setStatus(`Copied ${colors.length} colors as a Python array string.`);
   } catch {
-    setStatus("Clipboard permission was denied. Select and copy from the browser console fallback.", true);
+    els.paletteOutput.focus();
+    els.paletteOutput.select();
+    setStatus("Clipboard permission was denied; selected the Python array output.", true);
   }
+}
+
+function pythonArray(colors) {
+  return `[${colors.map((color) => `"${color}"`).join(", ")}]`;
 }
 
 function savePng() {
