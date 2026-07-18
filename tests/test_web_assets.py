@@ -18,12 +18,16 @@ def test_web_ui_assets_are_wired_for_github_pages():
     assert 'id="paletteGrid"' in html
     assert 'id="paletteOutput"' in html
     assert 'id="previewStrip"' in html
+    assert 'id="lineChart"' in html
+    assert 'id="barChart"' in html
+    assert 'id="pieChart"' in html
     assert 'id="metricCount"' in html
     assert "grid-template-columns: repeat(var(--columns, 4), minmax(0, 1fr));" in css
     assert ".workspace" in css
     assert ".app-body" in css
     assert ".workbench" in css
     assert ".output-panel" in css
+    assert ".chart-grid" in css
     assert "actions/deploy-pages@v4" in workflow
     assert "path: docs" in workflow
     assert "github-pages" in workflow
@@ -32,6 +36,10 @@ def test_web_ui_assets_are_wired_for_github_pages():
     assert "frontiers" in js
     assert "#4A6990" in js
     assert "function pythonArray" in js
+    assert "function renderCharts" in js
+    assert "function drawLineChart" in js
+    assert "function drawBarChart" in js
+    assert "function drawPieChart" in js
 
 
 def test_multilingual_readmes_link_to_web_ui():

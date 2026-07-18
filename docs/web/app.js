@@ -79,6 +79,9 @@ function init() {
     "paletteGrid",
     "paletteOutput",
     "previewStrip",
+    "lineChart",
+    "barChart",
+    "pieChart",
     "metricCount",
     "metricLocked",
     "metricMode",
@@ -97,6 +100,7 @@ function init() {
   setCount(6);
   bindEvents();
   rollPalette();
+  window.addEventListener("resize", scheduleChartRender);
 }
 
 function populatePresets() {
@@ -314,6 +318,152 @@ function updateOutput() {
     item.className = "preview-swatch";
     item.style.background = color;
     els.previewStrip.appendChild(item);
+  }
+  renderCharts(colors);
+}
+
+let chartFrame = null;
+
+function scheduleChartRender() {
+  if (chartFrame !== null) window.cancelAnimationFrame(chartFrame);
+  chartFrame = window.requestAnimationFrame(() => {
+    chartFrame = null;
+    renderCharts(state.colors.filter(Boolean));
+  });
+}
+
+function prepareCanvas(canvas) {
+  const width = Math.max(240, Math.floor(canvas.getBoundingClientRect().width));
+  const height = 220;
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.floor(width * scale);
+  canvas.height = Math.floor(height * scale);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  return { ctx, width, height };
+}
+
+function renderCharts(colors) {
+  if (!els.lineChart || !els.barChart || !els.pieChart) return;
+  drawLineChart(els.lineChart, colors);
+  drawBarChart(els.barChart, colors);
+  drawPieChart(els.pieChart, colors);
+}
+
+function drawChartFrame(ctx, width, height, padding) {
+  ctx.strokeStyle = "#E2E5EA";
+  ctx.lineWidth = 1;
+  ctx.font = "10px Inter, system-ui, sans-serif";
+  ctx.fillStyle = "#747B86";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let step = 0; step <= 4; step += 1) {
+    const y = padding.top + ((height - padding.top - padding.bottom) * step) / 4;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+    ctx.fillText(String(100 - step * 25), padding.left - 7, y);
+  }
+}
+
+function drawLineChart(canvas, colors) {
+  const { ctx, width, height } = prepareCanvas(canvas);
+  const padding = { top: 14, right: 8, bottom: 24, left: 34 };
+  drawChartFrame(ctx, width, height, padding);
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const points = 6;
+  colors.forEach((color, series) => {
+    ctx.beginPath();
+    for (let point = 0; point < points; point += 1) {
+      const x = padding.left + (plotWidth * point) / (points - 1);
+      const wave = 48 + 24 * Math.sin(point * 0.9 + series * 1.17) + ((series * 13 + point * 7) % 19);
+      const value = Math.max(8, Math.min(94, wave));
+      const y = padding.top + plotHeight * (1 - value / 100);
+      if (point === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.stroke();
+  });
+  drawXAxisLabels(ctx, width, height, padding, ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"]);
+}
+
+function drawBarChart(canvas, colors) {
+  const { ctx, width, height } = prepareCanvas(canvas);
+  const padding = { top: 14, right: 8, bottom: 24, left: 34 };
+  drawChartFrame(ctx, width, height, padding);
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const gap = Math.max(2, Math.min(7, plotWidth / Math.max(colors.length, 1) / 4));
+  const barWidth = Math.max(2, (plotWidth - gap * (colors.length + 1)) / Math.max(colors.length, 1));
+  colors.forEach((color, index) => {
+    const value = 34 + ((index * 23 + 31) % 61);
+    const barHeight = plotHeight * (value / 100);
+    const x = padding.left + gap + index * (barWidth + gap);
+    const y = padding.top + plotHeight - barHeight;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, barWidth, barHeight);
+  });
+  if (colors.length <= 12) {
+    ctx.fillStyle = "#747B86";
+    ctx.font = "10px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    colors.forEach((_, index) => {
+      const x = padding.left + gap + index * (barWidth + gap) + barWidth / 2;
+      ctx.fillText(String(index + 1), x, height - padding.bottom + 7);
+    });
+  }
+}
+
+function drawXAxisLabels(ctx, width, height, padding, labels) {
+  if (labels.length > 12) return;
+  const plotWidth = width - padding.left - padding.right;
+  ctx.fillStyle = "#747B86";
+  ctx.font = "10px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  labels.forEach((label, index) => {
+    const denominator = Math.max(labels.length - 1, 1);
+    const x = labels.length === 1
+      ? padding.left + plotWidth / 2
+      : padding.left + (plotWidth * index) / denominator;
+    ctx.fillText(label, x, height - padding.bottom + 7);
+  });
+}
+
+function drawPieChart(canvas, colors) {
+  const { ctx, width, height } = prepareCanvas(canvas);
+  const values = colors.map((_, index) => 3 + ((index * 7 + 5) % 11));
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const radius = Math.min(width, height) * 0.36;
+  const centerX = width / 2;
+  const centerY = height / 2 + 3;
+  let angle = -Math.PI / 2;
+  values.forEach((value, index) => {
+    const nextAngle = angle + (value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, angle, nextAngle);
+    ctx.closePath();
+    ctx.fillStyle = colors[index];
+    ctx.fill();
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    angle = nextAngle;
+  });
+  if (!colors.length) {
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = "#EEF1F5";
+    ctx.fill();
   }
 }
 

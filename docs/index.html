@@ -115,6 +115,29 @@
               </label>
             </aside>
           </section>
+          <section class="chart-preview" aria-labelledby="chartPreviewTitle">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Live application</p>
+                <h2 id="chartPreviewTitle">Chart Preview</h2>
+              </div>
+              <p>See how this palette reads in common categorical figures.</p>
+            </div>
+            <div class="chart-grid">
+              <article class="chart-card">
+                <h3>Line</h3>
+                <canvas id="lineChart" role="img" aria-label="Line chart preview using the current palette"></canvas>
+              </article>
+              <article class="chart-card">
+                <h3>Bar</h3>
+                <canvas id="barChart" role="img" aria-label="Bar chart preview using the current palette"></canvas>
+              </article>
+              <article class="chart-card">
+                <h3>Pie</h3>
+                <canvas id="pieChart" role="img" aria-label="Pie chart preview using the current palette"></canvas>
+              </article>
+            </div>
+          </section>
         </section>
       </section>
     </main>
